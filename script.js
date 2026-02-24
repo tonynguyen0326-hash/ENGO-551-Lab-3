@@ -14,6 +14,9 @@ flatpickr('#DateRange', {
     maxDate: "today"
 });
 
+// variable for all markers
+let markers;
+
 // function to get permits
 async function Permits() {
     
@@ -23,15 +26,14 @@ async function Permits() {
     // split date range into 2 different variables
     const [start, end] = range.split(" to ");
 
-    startdate = `${start}T00:00:00`;
-    enddate = `${end}T23:59:59`;
+    // add start and end times
+    const startdate = `${start}T00:00:00`;
+    const enddate = `${end}T23:59:59`;
     
+    // query from date range
     const query = `SELECT * WHERE issueddate >= '${startdate}' AND issueddate <= '${enddate}'`;
-    
-    //const url = `https://data.calgary.ca/api/v3/views/c2es-76ed/query.geojson?$where=${encodeURIComponent(valid)}&pageNumber=1&pageSize=10&app_token=7KhC2GawryogXKbvxrR7l58Zd`;
-    
-    //console.log(url);
 
+    // use API
     const response = await fetch("https://data.calgary.ca/api/v3/views/c2es-76ed/query.geojson",
         {
             method: "POST",
@@ -41,15 +43,32 @@ async function Permits() {
             },
             body: JSON.stringify({
                 query: query
-                //where: `issueddate >= '${start}' AND issueddate <= '${end}'`,
             })
         }
     );
 
     const result = await response.json();
-
-    console.log(result);
     
-    L.geoJSON(result).addTo(map);
+    // remove previous markers, if any
+    if (markers) {
+        map.removeLayer(markers);
+    }
+
+    // add markers with popups 
+    markers = L.geoJSON(result, {
+        onEachFeature: function(feature, layer) {
+            // get properties
+            if (feature.properties) {
+                const properties = feature.properties;
+                const popupContent = `
+                Issued Date: ${properties.issueddate || 'N/A'}<br>
+                Work Class Group: ${properties.workclassgroup || 'N/A'}<br>
+                Contractor Name: ${properties.contractorname || 'N/A'}<br>
+                Community Name: ${properties.communityname || 'N/A'}<br>
+                Original Address: ${properties.originaladdress || 'N/A'}`;
+                layer.bindPopup(popupContent);
+            }
+        }
+    }).addTo(map);
 
 }
