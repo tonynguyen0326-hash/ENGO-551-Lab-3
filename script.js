@@ -17,6 +17,9 @@ flatpickr('#DateRange', {
 // variable for all markers
 let markers;
 
+// variable for overlapping markers
+let oms = new window.OverlappingMarkerSpiderfier(map);
+
 // function to get permits
 async function Permits() {
     
@@ -52,6 +55,7 @@ async function Permits() {
     // remove previous markers, if any
     if (markers) {
         map.removeLayer(markers);
+        oms.clearMarkers();
     }
 
     // add markers with popups 
@@ -66,7 +70,9 @@ async function Permits() {
                 Contractor Name: ${properties.contractorname || 'N/A'}<br>
                 Community Name: ${properties.communityname || 'N/A'}<br>
                 Original Address: ${properties.originaladdress || 'N/A'}`;
+                // add popup to map
                 layer.bindPopup(popupContent);
+                oms.addMarker(layer);
             }
         }
     }).addTo(map);
